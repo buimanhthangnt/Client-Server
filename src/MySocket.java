@@ -1,15 +1,30 @@
-package mydatastructure;
-
 import com.savarese.rocksaw.net.RawSocket;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 
-public class MySocket extends RawSocket {
+class MySocket extends RawSocket {
+    static {
+        try {
+            String temp = new File("rocksaw.dll").getAbsolutePath();
+            StringBuilder absulutePath = new StringBuilder();
+            for (int i = 0; i < temp.length(); i++) {
+                if (temp.charAt(i) == '\\') {
+                    absulutePath.append("\\\\");
+                } else absulutePath.append(temp.charAt(i));
+            }
+            System.load(absulutePath.toString());
+        } catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+            System.out.println("fail");
+        }
+    }
+
     private int sourcePort;
     private int countFailureWhileSending;
 
-    public MySocket(InetAddress srcAddr, int sp) {
+    MySocket(InetAddress srcAddr, int sp) {
         sourcePort = sp;
         try {
             this.open(RawSocket.PF_INET, RawSocket.getProtocolByName("ip"));
@@ -19,7 +34,7 @@ public class MySocket extends RawSocket {
         }
     }
 
-    public Diagram read() throws IOException {
+    Diagram read() throws IOException {
         byte[] receivedPacket = new byte[2400];
         byte[] senderAddr = new byte[4];
         read(receivedPacket, senderAddr);
@@ -39,12 +54,14 @@ public class MySocket extends RawSocket {
             return null;
         Diagram ACK = new Diagram(receivedDiagram.destinationPort,
                 receivedDiagram.sourcePort, true, "ACK");
+        //send ACK back to sender
         write(InetAddress.getByAddress(senderAddr), ACK.getPacketInByte());
+        receivedDiagram.sourceAddr = InetAddress.getByAddress(senderAddr);
         return receivedDiagram;
     }
 
-    public void send(String message, InetAddress destinationAddr, int destinationport, boolean isACK) throws IOException {
-        Diagram diagram = new Diagram(sourcePort, destinationport, isACK, message);
+    void send(String message, InetAddress destinationAddr, int destinationport) throws IOException {
+        Diagram diagram = new Diagram(sourcePort, destinationport, false, message);
         countFailureWhileSending = 0;
         Thread timeout = new Thread(() -> {
             try {
@@ -61,12 +78,13 @@ public class MySocket extends RawSocket {
                 e.printStackTrace();
             }
         });
+        //set timeout
         timeout.start();
         Diagram diagram2;
+        //wait for ACK
         while (true) {
             diagram2 = this.read();
             if (diagram2 != null && diagram2.isACK) {
-                System.out.println("Received ACK!!!");
                 timeout.stop();
                 break;
             }

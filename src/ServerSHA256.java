@@ -1,11 +1,9 @@
-import mydatastructure.Diagram;
-import mydatastructure.MySocket;
-
 import java.net.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
-public class ServerSHA256 {
+class ServerSHA256 {
     private static String sha256(String input) throws NoSuchAlgorithmException {
         MessageDigest mDigest = MessageDigest.getInstance("SHA-256");
         byte[] result = mDigest.digest(input.getBytes());
@@ -15,24 +13,19 @@ public class ServerSHA256 {
         }
         return sb.toString();
     }
-    public static void main(String[] args) {
+    static void run(int port) {
         try {
-            InetAddress serverAddress = InetAddress.getByName("127.12.1.3");
-            MySocket serverSHA256 = new MySocket(serverAddress, 9092);
+            InetAddress serverAddress = InetAddress.getByName("127.12.1.2");
+            MySocket serverSHA256 = new MySocket(serverAddress, port);
             Diagram diagram = null;
             while (diagram == null) {
                 diagram = serverSHA256.read();
             }
-            System.out.println("Source port: " + diagram.sourcePort);
-            System.out.println("Destination port: " + diagram.destinationPort);
-            System.out.println("Checksum: " + diagram.checksum);
-            System.out.println("Length: " + diagram.length);
-            System.out.println("ACK: " + diagram.isACK);
-            System.out.println("Message: " + diagram.payload);
-
-            InetAddress ClientAddr = InetAddress.getByName("127.12.1.10");
-            String MD5value = sha256(diagram.payload);
-            serverSHA256.send(MD5value, ClientAddr, 3200, false);
+            List<String> list = FrontendServer.parseMessageFromFrontend(diagram.payload);
+            InetAddress clientAddr = InetAddress.getByName(list.get(0));
+            int clientPort = Integer.parseInt(list.get(1));
+            String SHAvalue = sha256(list.get(2));
+            serverSHA256.send("SHA 256: " + SHAvalue, clientAddr, clientPort);
         } catch (Exception e) {
             e.printStackTrace();
         }

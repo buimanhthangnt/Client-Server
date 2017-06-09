@@ -1,39 +1,28 @@
-package mydatastructure;
+import java.net.InetAddress;
 
-public class Diagram {
-    public int sourcePort;
-    public int destinationPort;
-    public String checksum;
-    public int length;
-    public boolean isACK;
-    public String payload;
+class Diagram {
+    InetAddress sourceAddr;  //only for storing purpose, not included in diagram, not for checksum calculation
+    int sourcePort;
+    int destinationPort;
+    String checksum;
+    int length;
+    boolean isACK;
+    String payload;
 
     Diagram(int srcPort, int desPort, boolean isAck, String pload) {
-        try {
-            if (pload.length() > 80) throw new Exception();
-            sourcePort = srcPort;
-            destinationPort = desPort;
-            isACK = isAck;
-            payload = pload;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Maximum length of message is 80 characters");
-        }
+        sourcePort = srcPort;
+        destinationPort = desPort;
+        isACK = isAck;
+        payload = pload;
     }
 
     private Diagram(int srcPort, int desPort, String csum, int length, boolean isAck, String pload) {
-        try {
-            if (pload.length() > 80) throw new Exception();
-            sourcePort = srcPort;
-            destinationPort = desPort;
-            checksum = csum;
-            this.length = length;
-            isACK = isAck;
-            payload = pload;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Maximum length of message is 80 characters");
-        }
+        sourcePort = srcPort;
+        destinationPort = desPort;
+        checksum = csum;
+        this.length = length;
+        isACK = isAck;
+        payload = pload;
     }
 
     static Diagram getDiagramFromByte(byte[] bytePacket) {
@@ -83,19 +72,19 @@ public class Diagram {
 
     static int computeChecksum(byte[] s) {
         String hex_value;
-        int x, i, checksum=0;
-        for(i=0 ; i < s.length-2 ; i=i+2) {
+        int x, i, checksum = 0;
+        for (i = 0; i < s.length - 2; i = i + 2) {
             x = getByteValue(s[i]);
             hex_value = Integer.toHexString(x);
-            x = getByteValue(s[i+1]);
+            x = getByteValue(s[i + 1]);
             hex_value = hex_value + Integer.toHexString(x);
             x = Integer.parseInt(hex_value, 16);
             checksum += x;
         }
-        if(s.length%2 == 0) {
+        if (s.length % 2 == 0) {
             x = getByteValue(s[i]);
             hex_value = Integer.toHexString(x);
-            x = getByteValue(s[i+1]);
+            x = getByteValue(s[i + 1]);
             hex_value = hex_value + Integer.toHexString(x);
             x = Integer.parseInt(hex_value, 16);
         } else {
@@ -105,9 +94,9 @@ public class Diagram {
         }
         checksum += x;
         hex_value = Integer.toHexString(checksum);
-        if(hex_value.length() > 4) {
-            int carry = Integer.parseInt((""+hex_value.charAt(0)), 16);
-            hex_value = hex_value.substring(1,5);
+        if (hex_value.length() > 4) {
+            int carry = Integer.parseInt(("" + hex_value.charAt(0)), 16);
+            hex_value = hex_value.substring(1, 5);
             checksum = Integer.parseInt(hex_value, 16);
             checksum += carry;
         }
